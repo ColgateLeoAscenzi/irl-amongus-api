@@ -1,0 +1,12 @@
+{
+  "name": "irl-amongus-api",
+  "version": "1.0.0",
+  "description": "A socket.io based API for handling game data",
+  "main": "index.js",
+  "repository": "https://github.com/ColgateLeoAscenzi/irl-amongus-api.git",
+  "author": "Leonardo Ascenzi <lascenzi@colgate.edu>",
+  "license": "MIT",
+  "dependencies": {
+    "socket.io": "^4.1.2"
+  }
+}

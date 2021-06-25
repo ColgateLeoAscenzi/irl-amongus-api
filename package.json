@@ -1,12 +1,53 @@
 {
-  "name": "irl-amongus-api",
-  "version": "1.0.0",
-  "description": "A socket.io based API for handling game data",
-  "main": "index.js",
-  "repository": "https://github.com/ColgateLeoAscenzi/irl-amongus-api.git",
-  "author": "Leonardo Ascenzi <lascenzi@colgate.edu>",
-  "license": "MIT",
-  "dependencies": {
-    "socket.io": "^4.1.2"
-  }
+    "name": "irl-amongus-api",
+    "version": "1.0.0",
+    "description": "A socket.io based API for handling game data",
+    "main": "index.js",
+    "repository": "https://github.com/ColgateLeoAscenzi/irl-amongus-api.git",
+    "author": "Leonardo Ascenzi <lascenzi@colgate.edu>",
+    "license": "MIT",
+    "dependencies": {
+        "socket.io": "^4.1.2"
+    },
+    "scripts": {
+        "lint:raw": "eslint \"{*,{src,public,docs,.storybook}/**/*,__{tests,mocks}__/**/*}.{js,jsx,tsx}\"",
+        "lint": "yarn run lint:raw || true",
+        "pretty": "prettier --write \"{*,{src,public,docs,.storybook}/**/*,__{tests,mocks}__/**/*}.{js,jsx,tsx,json,md,yml,html}\"",
+        "fixcode": "yarn run lint:raw --fix && yarn run pretty && yarn run lint",
+        "prepare": "husky install"
+    },
+    "prettier": "@carimus/prettier-config",
+    "eslintConfig": {
+        "extends": "@carimus/eslint-config-react"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "lint-staged"
+        }
+    },
+    "lint-staged": {
+        "{*,{src,public,docs,.storybook}/**/*,__{tests,mocks}__/**/*}.{js,jsx,tsx}": [
+            "prettier --write",
+            "eslint"
+        ],
+        "{*,{src,public,docs,.storybook}/**/*,__{tests,mocks}__/**/*}.{json,md,yml,html}": [
+            "prettier --write"
+        ]
+    },
+    "devDependencies": {
+        "@carimus/eslint-config-react": "^1.2.0",
+        "@carimus/prettier-config": "^1.1.0",
+        "eslint": "^7.29.0",
+        "eslint-plugin-babel": "^5.3.1",
+        "eslint-plugin-import": "^2.23.4",
+        "eslint-plugin-jest": "^24.3.6",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-promise": "^5.1.0",
+        "eslint-plugin-react": "^7.24.0",
+        "eslint-plugin-react-hooks": "^4.2.0",
+        "eslint-plugin-standard": "^5.0.0",
+        "husky": "^6.0.0",
+        "lint-staged": "^11.0.0",
+        "prettier": "^2.3.1"
+    }
 }

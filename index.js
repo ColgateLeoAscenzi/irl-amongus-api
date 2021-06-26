@@ -17,18 +17,25 @@ if (fs.existsSync('.env.local')) {
 }
 
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
+
+const corsOptions = {
+    origin: process.env.BASE_URL,
+    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+app.use(cors(corsOptions));
 const io = require('socket.io')(server, {
     cors: {
-        origin: process.env.BASE_URL || 'http://localhost:3000',
+        origin: process.env.BASE_URL,
     },
 });
-const port = process.env.PORT || 8080;
+const port = process.env.PORT;
 
 app.get('/', (req, res) => {
-    res.send('<h1>Server is Up</h1>');
+    res.send({ status: 'Up' });
 });
 
 // rooms: {code1: {playerNames: {p1: true, p2: true}, players: [{id1, p1}, {id2: p2}]}, code2: {}}
@@ -80,4 +87,5 @@ io.on('connection', (socket) => {
 
 server.listen(port, () => {
     logInfo(`listening on *:${port}`);
+    logInfo(`open to requests from ${process.env.BASE_URL}`);
 });

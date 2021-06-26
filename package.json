@@ -7,6 +7,7 @@
     "author": "Leonardo Ascenzi <lascenzi@colgate.edu>",
     "license": "MIT",
     "dependencies": {
+        "dotenv": "^10.0.0",
         "socket.io": "^4.1.2",
         "winston": "^3.3.3"
     },

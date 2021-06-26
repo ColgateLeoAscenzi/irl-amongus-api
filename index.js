@@ -3,10 +3,25 @@ const { getPlayers } = require('./store/selectors');
 const { addPlayer } = require('./store/updaters');
 const { logInfo, logError } = require('./logger/loggerUtils');
 
+const fs = require('fs');
+const dotenv = require('dotenv');
+const result = dotenv.config();
+if (result.error) {
+    throw result.error;
+}
+
+if (fs.existsSync('.env.local')) {
+    const envConfig = dotenv.parse(fs.readFileSync('.env.local'));
+    for (const k in envConfig) {
+        process.env[k] = envConfig[k];
+    }
+}
+
 const httpServer = require('http').createServer();
+
 const io = require('socket.io')(httpServer, {
     cors: {
-        origin: 'http://localhost:3000',
+        origin: process.env.BASE_URL || 'http://localhost:3000',
     },
 });
 const port = process.env.PORT || 8080;

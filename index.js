@@ -9,7 +9,6 @@ const result = dotenv.config();
 if (result.error) {
     throw result.error;
 }
-
 if (fs.existsSync('.env.local')) {
     const envConfig = dotenv.parse(fs.readFileSync('.env.local'));
     for (const k in envConfig) {
@@ -17,14 +16,20 @@ if (fs.existsSync('.env.local')) {
     }
 }
 
-const httpServer = require('http').createServer();
-
-const io = require('socket.io')(httpServer, {
+const express = require('express');
+const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const io = require('socket.io')(server, {
     cors: {
         origin: process.env.BASE_URL || 'http://localhost:3000',
     },
 });
 const port = process.env.PORT || 8080;
+
+app.get('/', (req, res) => {
+    res.send('<h1>Server is Up</h1>');
+});
 
 // rooms: {code1: {playerNames: {p1: true, p2: true}, players: [{id1, p1}, {id2: p2}]}, code2: {}}
 let rooms = {};
@@ -73,6 +78,6 @@ io.on('connection', (socket) => {
     });
 });
 
-httpServer.listen(port, () => {
+server.listen(port, () => {
     logInfo(`listening on *:${port}`);
 });

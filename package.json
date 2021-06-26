@@ -6,12 +6,17 @@
     "repository": "https://github.com/ColgateLeoAscenzi/irl-amongus-api.git",
     "author": "Leonardo Ascenzi <lascenzi@colgate.edu>",
     "license": "MIT",
+    "engines": {
+        "node": "14.x"
+    },
     "dependencies": {
         "dotenv": "^10.0.0",
+        "express": "^4.17.1",
         "socket.io": "^4.1.2",
         "winston": "^3.3.3"
     },
     "scripts": {
+        "start": "node index.js",
         "lint:raw": "eslint \"{*,{src,public,docs,.storybook}/**/*,__{tests,mocks}__/**/*}.{js,jsx,tsx}\"",
         "lint": "yarn run lint:raw || true",
         "pretty": "prettier --write \"{*,{src,public,docs,.storybook}/**/*,__{tests,mocks}__/**/*}.{js,jsx,tsx,json,md,yml,html}\"",

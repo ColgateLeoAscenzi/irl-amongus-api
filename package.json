@@ -7,7 +7,8 @@
     "author": "Leonardo Ascenzi <lascenzi@colgate.edu>",
     "license": "MIT",
     "dependencies": {
-        "socket.io": "^4.1.2"
+        "socket.io": "^4.1.2",
+        "winston": "^3.3.3"
     },
     "scripts": {
         "lint:raw": "eslint \"{*,{src,public,docs,.storybook}/**/*,__{tests,mocks}__/**/*}.{js,jsx,tsx}\"",

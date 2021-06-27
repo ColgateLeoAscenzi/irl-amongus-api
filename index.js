@@ -1,4 +1,8 @@
-const { NEW_PLAYER, JOINED_ROOM } = require('./store/actions');
+const {
+    NEW_PLAYER,
+    JOINED_ROOM,
+    PLAYER_EXISTS_ALREADY,
+} = require('./store/actions');
 const { getPlayers } = require('./store/selectors');
 const { addPlayer } = require('./store/updaters');
 const { logInfo, logError } = require('./logger/loggerUtils');
@@ -53,10 +57,16 @@ io.on('connection', (socket) => {
                 const room = rooms[roomCode];
                 rooms[roomCode] = addPlayer(room, name, socketId);
 
-                socket.emit(JOINED_ROOM, getPlayers(room));
+                socket.emit(JOINED_ROOM, {
+                    players: getPlayers(room),
+                    roomCode: roomCode,
+                    name: name,
+                });
                 io.sockets.emit(NEW_PLAYER, getPlayers(room));
 
                 logInfo(`Updated Room: ${roomCode}, added player: ${name}`);
+            } else {
+                socket.emit(PLAYER_EXISTS_ALREADY, name);
             }
             // Successful room request, room doesn't exist
         } else if (roomCode) {
@@ -69,7 +79,11 @@ io.on('connection', (socket) => {
             rooms[roomCode] = addPlayer(room, name, socketId);
 
             // tell player they joined, tell players someone's there
-            socket.emit(JOINED_ROOM, getPlayers(room));
+            socket.emit(JOINED_ROOM, {
+                players: getPlayers(room),
+                roomCode: roomCode,
+                name: name,
+            });
             io.sockets.emit(NEW_PLAYER, getPlayers(room));
 
             logInfo(`Created Room: ${roomCode}, added player: ${name}`);

@@ -1,7 +1,7 @@
 const {logger} = require("./index");
 
-const logInfo = (error) => {
-    logger['info'](error);
+const logInfo = (msg) => {
+    logger['info'](msg);
 };
 
 const logError = (error) => {

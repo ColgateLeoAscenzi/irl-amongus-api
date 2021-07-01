@@ -2,13 +2,16 @@ const {
     NEW_PLAYER,
     JOINED_ROOM,
     PLAYER_EXISTS_ALREADY,
-} = require('./store/actions');
-const { getPlayers, getPlayerStatuses } = require('./store/players/selectors');
-const { addPlayer, killPlayer } = require('./store/players/updaters');
-const { startGame } = require('./store/game/updaters');
-const { taskList } = require('./tasks');
+} = require('./src/store/actions');
+const {
+    getPlayers,
+    getPlayerStatuses,
+} = require('./src/store/players/selectors');
+const { addPlayer, killPlayer } = require('./src/store/players/updaters');
+const { startGame } = require('./src/store/game/updaters');
+const { taskList, commonTasks, shortTasks, longTasks } = require('./src/tasks');
 
-const { logInfo, logError } = require('./logger/loggerUtils');
+const { logInfo, logError } = require('./src/logger/loggerUtils');
 
 const fs = require('fs');
 const dotenv = require('dotenv');
@@ -27,8 +30,17 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const http = require('http');
-const { ROLE_IMPOSTER } = require('./store/players/consts');
-const { checkImposterWinKill } = require('./store/players/utils');
+const { getMasterTaskObject } = require('./src/store/game/selectors');
+const { getPlayerNames } = require('./src/store/players/selectors');
+const { getPlayerTasks } = require('./src/store/players/selectors');
+const { playerSetInitialTasks } = require('./src/store/players/updaters');
+const { ROLE_CREW } = require('./src/store/players/consts');
+const { checkCrewWinTask } = require('./src/store/players/utils');
+const { playerFinishTask } = require('./src/store/players/updaters');
+const { playerExitTask } = require('./src/store/players/updaters');
+const { playerEnterTask } = require('./src/store/players/updaters');
+const { ROLE_IMPOSTER } = require('./src/store/players/consts');
+const { checkImposterWinKill } = require('./src/store/players/utils');
 const server = http.createServer(app);
 
 const corsOptions = {
@@ -89,11 +101,18 @@ io.on('connection', (socket) => {
                 inProgress: false,
                 inMeeting: false,
                 emergency: [false, false],
-                tasks: taskList,
-                totalTasks: 56,
+                tasks: getMasterTaskObject(taskList),
+                shortTasks: shortTasks,
+                commonTasks: commonTasks,
+                longTasks: longTasks,
+                totalTasks: 0,
                 tasksComplete: 0,
                 impostersAlive: 0,
                 crewAlive: 0,
+                selectedCommonTask: Math.round(Math.random() * 0),
+                numCommonTasks: 1,
+                numShortTasks: 5,
+                numLongTasks: 2,
                 gameOver: false,
                 crewWin: false,
                 imposterWin: false,
@@ -122,9 +141,27 @@ io.on('connection', (socket) => {
 
     // game logic
     socket.on('start-game', ({ roomCode }) => {
+        const room = rooms[roomCode];
         const roomData = gameData[roomCode];
         gameData[roomCode] = startGame(roomData);
-        io.to(roomCode).emit('game-started');
+        gameData[roomCode].totalTasks =
+            room.players.length *
+            (gameData[roomCode].numCommonTasks +
+                gameData[roomCode].numShortTasks +
+                gameData[roomCode].numLongTasks);
+        const playerNames = getPlayerNames(room);
+        for (let i = 0; i < playerNames.length; i++) {
+            const name = playerNames[i];
+            room.playerData[name].taskList = playerSetInitialTasks(
+                room,
+                roomData,
+                name,
+            );
+        }
+        io.to(roomCode).emit('game-started', {
+            totalTasks: gameData[roomCode].totalTasks,
+            masterTaskList: gameData[roomCode].tasks,
+        });
     });
 
     // player logic
@@ -136,14 +173,51 @@ io.on('connection', (socket) => {
         gameData[roomCode] = roomData;
         socket.emit('killed');
         checkImposterWinKill(roomData) &&
-            io.sockets.emit('game-over', { winner: ROLE_IMPOSTER });
+            io.to(roomCode).emit('game-over', { winner: ROLE_IMPOSTER }) &&
+            logInfo(`Game Over, Imposters Won! Room: ${roomCode}`);
     });
 
     // task logic
-    socket.on('view-scanner', ({ roomCode }) => {
+    socket.on('view-scanner', ({ roomCode }, fn) => {
         const room = rooms[roomCode];
         const playerStats = getPlayerStatuses(room);
-        socket.emit('scanner-viewed', { playerStatus: playerStats });
+        fn({ playerStatus: playerStats });
+    });
+
+    socket.on('get-task-list', ({ roomCode, name }, fn) => {
+        const room = rooms[roomCode];
+        const taskList = getPlayerTasks(room, name);
+        fn(taskList);
+    });
+
+    socket.on('start-task', ({ roomCode, name, taskID }) => {
+        const room = rooms[roomCode];
+        rooms[roomCode] = playerEnterTask(room, name, taskID);
+    });
+
+    socket.on('exit-task', ({ roomCode, name }) => {
+        const room = rooms[roomCode];
+        rooms[roomCode] = playerExitTask(room, name);
+    });
+
+    socket.on('finish-task', ({ roomCode, name, taskID }) => {
+        const roomOld = rooms[roomCode];
+        const roomDataOld = gameData[roomCode];
+        const { room, roomData } = playerFinishTask(
+            roomOld,
+            roomDataOld,
+            name,
+            taskID,
+        );
+        rooms[roomCode] = room;
+        gameData[roomCode] = roomData;
+        socket.emit('finished-task', { taskID: taskID });
+        io.to(roomCode).emit('task-update', {
+            completedTasks: roomData.completedTasks,
+        });
+        checkCrewWinTask(roomData) &&
+            io.to(roomCode).emit('game-over', { winner: ROLE_CREW }) &&
+            logInfo(`Game Over, Crew Won! Room: ${roomCode}`);
     });
 
     // util

@@ -15,7 +15,7 @@ const generateRandomSubarray = (array, len) => {
  * Shuffles array in place.
  * @param {Array} a items An array containing the items.
  */
-function shuffle(a) {
+const shuffle = (a) => {
     let j, x, i;
     for (i = a.length - 1; i > 0; i--) {
         j = Math.floor(Math.random() * (i + 1));
@@ -24,7 +24,7 @@ function shuffle(a) {
         a[j] = x;
     }
     return a;
-}
+};
 
 const prepTasksForPlayer = (commonTasks, shortTasks, longTasks) => {
     const tasksObject = {};
@@ -48,4 +48,5 @@ module.exports = {
     checkCrewWinTask,
     generateRandomSubarray,
     prepTasksForPlayer,
+    shuffle,
 };

@@ -30,6 +30,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const http = require('http');
+const { shuffle } = require('./src/store/players/utils');
 const { getMasterTaskObject } = require('./src/store/game/selectors');
 const { getPlayerNames } = require('./src/store/players/selectors');
 const { getPlayerTasks } = require('./src/store/players/selectors');
@@ -100,11 +101,13 @@ io.on('connection', (socket) => {
             const roomData = {
                 inProgress: false,
                 inMeeting: false,
-                emergency: [false, false],
+                inEmergency: false,
+                pressingEmergency: 0,
                 tasks: getMasterTaskObject(taskList),
                 shortTasks: shortTasks,
                 commonTasks: commonTasks,
                 longTasks: longTasks,
+                emergencyDuration: 2,
                 totalTasks: 0,
                 tasksComplete: 0,
                 impostersAlive: 0,
@@ -158,10 +161,37 @@ io.on('connection', (socket) => {
                 name,
             );
         }
+
+        let numImposters;
+        if (playerNames.length <= 6) {
+            numImposters = 1;
+        } else {
+            numImposters = 2;
+        }
+
+        const playerData = room.playerData;
+        const shuffled = shuffle(playerNames);
+
+        for (let i = 0; i < numImposters; i++) {
+            const name = shuffled[i];
+            playerData[name].role = ROLE_IMPOSTER;
+        }
+
+        gameData[roomCode].impostersAlive = numImposters;
+        gameData[roomCode].crewAlive = playerNames.length - numImposters;
+
+        rooms[roomCode].playerData = playerData;
+
         io.to(roomCode).emit('game-started', {
             totalTasks: gameData[roomCode].totalTasks,
             masterTaskList: gameData[roomCode].tasks,
         });
+    });
+
+    socket.on('get-role', ({ roomCode, name }, fn) => {
+        const room = rooms[roomCode];
+        const role = room.playerData[name].role;
+        fn(role);
     });
 
     // player logic
@@ -175,6 +205,122 @@ io.on('connection', (socket) => {
         checkImposterWinKill(roomData) &&
             io.to(roomCode).emit('game-over', { winner: ROLE_IMPOSTER }) &&
             logInfo(`Game Over, Imposters Won! Room: ${roomCode}`);
+    });
+
+    socket.on('report', ({ roomCode }) => {
+        const roomOld = rooms[roomCode];
+        const roomDataOld = gameData[roomCode];
+        const playerStatuses = getPlayerStatuses(roomOld);
+        roomDataOld.inMeeting = true;
+        io.to(roomCode).emit('started-meeting', {
+            playerStatuses: playerStatuses,
+        });
+    });
+
+    socket.on('start-meeting', ({ roomCode }) => {
+        const roomOld = rooms[roomCode];
+        const roomDataOld = gameData[roomCode];
+        roomDataOld.inMeeting = true;
+
+        const playerStatuses = getPlayerStatuses(roomOld);
+
+        io.to(roomCode).emit('started-meeting', {
+            playerStatuses: playerStatuses,
+        });
+    });
+
+    socket.on('end-meeting', ({ roomCode }) => {
+        const roomOld = rooms[roomCode];
+        const roomDataOld = gameData[roomCode];
+        const players = Object.keys(roomOld.playerData);
+        const voteArray = [];
+
+        for (let i = 0; i < players.length; i++) {
+            voteArray.push({
+                // crashes on this line
+                votes: roomDataOld[players[i].name].votes,
+                name: players[i].name,
+            });
+        }
+
+        const unsortedArr = voteArray;
+
+        voteArray.sort((a, b) => {
+            const keyA = a.votes;
+            const keyB = b.votes;
+            if (keyA < keyB) return 1;
+            if (keyA > keyB) return -1;
+            return 0;
+        });
+
+        const killedPlayer = voteArray[0].name;
+
+        const { room, roomData } = killPlayer(
+            roomOld,
+            roomDataOld,
+            killedPlayer,
+        );
+
+        io.to(roomCode).emit('final-votes', { voteList: unsortedArr });
+
+        // reset votes
+        for (let i = 0; i < players.length; i++) {
+            roomData.playerData[players[i].name].votes = 0;
+        }
+        roomData.inMeeting = false;
+        rooms[roomCode] = room;
+        gameData[roomCode] = roomData;
+
+        setTimeout(() => {
+            io.to(roomCode).emit('meeting-ended', {
+                killedPlayer: killedPlayer,
+            });
+        }, 5000);
+    });
+
+    socket.on('vote', ({ roomCode, name }) => {
+        const roomOld = rooms[roomCode];
+        roomOld.playerData[name].votes += 1;
+        rooms[roomCode] = roomOld;
+    });
+
+    socket.on('call-emergency', ({ roomCode, name }) => {
+        const roomOld = rooms[roomCode];
+        const roomDataOld = gameData[roomCode];
+
+        if (
+            !roomDataOld.inEmergency &&
+            roomOld.playerData[name].role === ROLE_IMPOSTER
+        ) {
+            io.to(roomCode).emit('emergency-started');
+            io.to(`${roomCode}Sound`).emit('start-emergency-sound');
+            roomDataOld.inEmergency = true;
+        }
+        gameData[roomCode] = roomDataOld;
+        setTimeout(() => {
+            if (gameData[roomCode].inEmergency) {
+                io.to(roomCode).emit('game-over', { winner: ROLE_IMPOSTER });
+            } else {
+                io.to(roomCode).emit('emergency-over');
+                io.to(`${roomCode}Sound`).emit('stop-emergency-sound');
+            }
+        }, roomDataOld.emergencyDuration * 1000);
+    });
+
+    socket.on('stop-emergency-onPress', ({ roomCode }) => {
+        const roomDataOld = gameData[roomCode];
+        roomDataOld.pressingEmergency += 1;
+        if (roomDataOld.pressingEmergency >= 2) {
+            io.to(roomCode).emit('emergency-over');
+            io.to(`${roomCode}Sound`).emit('start-emergency-sound');
+        }
+        gameData[roomCode] = roomDataOld;
+    });
+
+    socket.on('stop-emergency-onRelease', ({ roomCode }) => {
+        const roomDataOld = gameData[roomCode];
+        roomDataOld.pressingEmergency -= 1;
+        gameData[roomCode] = roomDataOld;
     });
 
     // task logic
@@ -201,6 +347,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('finish-task', ({ roomCode, name, taskID }) => {
+        logInfo(`${name} from ${roomCode} finished task: ${taskID}`);
         const roomOld = rooms[roomCode];
         const roomDataOld = gameData[roomCode];
         const { room, roomData } = playerFinishTask(
@@ -213,7 +360,7 @@ io.on('connection', (socket) => {
         gameData[roomCode] = roomData;
         socket.emit('finished-task', { taskID: taskID });
         io.to(roomCode).emit('task-update', {
-            completedTasks: roomData.completedTasks,
+            tasksComplete: roomData.tasksComplete,
         });
         checkCrewWinTask(roomData) &&
             io.to(roomCode).emit('game-over', { winner: ROLE_CREW }) &&
@@ -237,6 +384,10 @@ io.on('connection', (socket) => {
 
     socket.on('fetch-admin-data', () => {
         socket.emit('admin-data', { rooms: rooms, gameData: gameData });
+    });
+
+    socket.on('join-room-sound', ({ roomCode }) => {
+        socket.join(`${roomCode}Sound`);
     });
 });
 

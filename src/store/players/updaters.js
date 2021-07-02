@@ -11,11 +11,12 @@ const addPlayer = (room, name, socketId) => {
     // update hashmap for checking
     room.playerNames[name] = true;
     room.playerData[name] = {
-        role: '',
+        role: ROLE_CREW,
         isDead: false,
         doingTask: false,
         currentTask: '-1',
         taskList: {},
+        votes: 0,
     };
     return room;
 };

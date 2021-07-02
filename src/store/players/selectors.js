@@ -14,7 +14,7 @@ const getPlayerStatuses = (room) => {
     const playerStatuses = [];
     for (let i = 0; i < room.players.length; i++) {
         const name = room.players[i].name;
-        const status = { name: name, isDead: room.playerData[name] };
+        const status = { name: name, isDead: room.playerData[name].isDead };
         playerStatuses.push(status);
     }
     return playerStatuses;

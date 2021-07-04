@@ -255,7 +255,7 @@ io.on('connection', async (socket) => {
             return 0;
         });
 
-        const killedPlayer = voteArray[0].name;
+        const killedPlayer = (voteArray[0].votes === voteArray[1].votes) ? '' : voteArray[0].name;
 
         const { room, roomData } = killPlayer(
             roomOld,

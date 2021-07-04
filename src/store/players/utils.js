@@ -6,6 +6,10 @@ const checkCrewWinTask = (roomData) => {
     return roomData.tasksComplete === roomData.totalTasks;
 };
 
+const checkCrewWinVote = (roomData) => {
+    return roomData.impostersAlive === 0;
+}
+
 const generateRandomSubarray = (array, len) => {
     const shuffled = shuffle(array);
     return shuffled.slice(0, len);
@@ -46,6 +50,7 @@ const prepTasksForPlayer = (commonTasks, shortTasks, longTasks) => {
 module.exports = {
     checkImposterWinKill,
     checkCrewWinTask,
+    checkCrewWinVote,
     generateRandomSubarray,
     prepTasksForPlayer,
     shuffle,

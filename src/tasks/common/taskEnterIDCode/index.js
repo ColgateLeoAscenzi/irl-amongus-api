@@ -1,7 +1,7 @@
 const task11ID = 11;
 const task11Name = 'Enter ID Code';
-const task11Loc = 'Task Location';
-const task11Desc = 'Task Description';
+const task11Loc = 'Located in Admin';
+const task11Desc = 'Enter the code displayed on the wallet ID card';
 const task11TotalParts = 1;
 
 const taskEnterIDCode = {

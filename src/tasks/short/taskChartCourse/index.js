@@ -1,7 +1,7 @@
 const task8ID = 8;
 const task8Name = 'Chart Course';
-const task8Loc = 'Location Here';
-const task8Desc = 'Description Here';
+const task8Loc = 'Located in Admin or Navigation';
+const task8Desc = 'Go the panel and drag the ship displayed across the our points';
 const task8TotalParts = 1;
 
 const taskChartCourse = {

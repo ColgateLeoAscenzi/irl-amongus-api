@@ -1,7 +1,7 @@
 const task10ID = 10;
 const task10Name = 'Decontaminate';
-const task10Loc = 'Location Here';
-const task10Desc = 'Description Here';
+const task10Loc = 'Located in Main Hall (shower)';
+const task10Desc = 'Step into the shower in Main Hall and use the hose ';
 const task10TotalParts = 1;
 
 const taskDecontaminate = {

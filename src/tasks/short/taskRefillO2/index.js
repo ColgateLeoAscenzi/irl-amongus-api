@@ -1,7 +1,7 @@
 const task2ID = 2;
 const task2Name = 'Refill O2 Canisters';
-const task2Loc = 'O2 Room';
-const task2Desc = 'Click the canister to place it, click to fill it';
+const task2Loc = 'Located in O2';
+const task2Desc = 'Drag the canister to the airway to fill it up with gas';
 const task2TotalParts = 1;
 
 const taskRefillO2 = {

@@ -1,7 +1,7 @@
 const task13ID = 13;
 const task13Name = 'Measure Weather';
-const task13Loc = 'Location Here';
-const task13Desc = 'Description Here';
+const task13Loc = 'Located in Balcony';
+const task13Desc = 'Hit the "Begin" button to download data and wait about 10 seconds until download is complete.';
 const task13TotalParts = 1;
 
 const taskMeasureWeather = {

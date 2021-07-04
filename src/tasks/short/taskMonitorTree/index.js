@@ -1,6 +1,6 @@
 const task20ID = 20;
 const task20Name = 'Monitor Tree';
-const task20Loc = 'Location Here';
+const task20Loc = 'Located in O2';
 const task20Desc = 'Slide the Bars to Match the Lines';
 const task20TotalParts = 1;
 

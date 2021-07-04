@@ -1,7 +1,7 @@
 const task4ID = 4;
 const task4Name = 'Assemble Artifact';
-const task4Loc = 'Location Here';
-const task4Desc = 'Description Here';
+const task4Loc = 'Located in Lab';
+const task4Desc = 'Assemble a gem\'s five shattered pieces together by clocking and dragging the pieces appropriately';
 const task4TotalParts = 1;
 
 const taskAssembleArtifact = {

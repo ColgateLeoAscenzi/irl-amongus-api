@@ -277,6 +277,8 @@ io.on('connection', async (socket) => {
             io.to(roomCode).emit('meeting-ended', {
                 killedPlayer: killedPlayer,
             });
+            checkImposterWinKill(roomData) && io.to(roomCode).emit('game-over', { winner: ROLE_IMPOSTER }) &&
+            logInfo(`Game Over, Imposter Won! Room: ${roomCode}`);
             checkCrewWinVote(roomData) && io.to(roomCode).emit('game-over', { winner: ROLE_CREW }) &&
             logInfo(`Game Over, Crew Won! Room: ${roomCode}`);
         }, 5000);

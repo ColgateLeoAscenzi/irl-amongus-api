@@ -66,9 +66,9 @@ let rooms = {};
 // gameData: {code1: {inProgress: false, inMeeting: false, emergency: [false, false],  task [Object, object], gameOver: false, crewWin: false, imposterWin: false}}
 let gameData = {};
 
-io.on('connection', async (socket) => {
+io.on('connection',(socket) => {
     // init
-    await socket.on('create-room', (data) => {
+    socket.on('create-room', (data) => {
         const roomCode = data?.roomCode;
         const name = data?.name;
         const socketId = socket.id;
@@ -143,7 +143,7 @@ io.on('connection', async (socket) => {
     });
 
     // game logic
-    await socket.on('start-game', ({ roomCode }) => {
+    socket.on('start-game', ({ roomCode }) => {
         const room = rooms[roomCode];
         const roomData = gameData[roomCode];
         gameData[roomCode] = startGame(roomData);
@@ -188,14 +188,14 @@ io.on('connection', async (socket) => {
         });
     });
 
-    await socket.on('get-role', ({ roomCode, name }, fn) => {
+    socket.on('get-role', ({ roomCode, name }, fn) => {
         const room = rooms[roomCode];
         const role = room.playerData[name].role;
         fn(role);
     });
 
     // player logic
-    await socket.on('kill', ({ roomCode, name }) => {
+    socket.on('kill', ({ roomCode, name }) => {
         const roomOld = rooms[roomCode];
         const roomDataOld = gameData[roomCode];
         const { room, roomData } = killPlayer(roomOld, roomDataOld, name);
@@ -210,7 +210,7 @@ io.on('connection', async (socket) => {
         logInfo(`Game Over, Crew Won! Room: ${roomCode}`);
     });
 
-    await socket.on('report', ({ roomCode }) => {
+    socket.on('report', ({ roomCode }) => {
         const roomOld = rooms[roomCode];
         const roomDataOld = gameData[roomCode];
         const playerStatuses = getPlayerStatuses(roomOld);
@@ -220,7 +220,7 @@ io.on('connection', async (socket) => {
         });
     });
 
-    await socket.on('start-meeting', ({ roomCode }) => {
+    socket.on('start-meeting', ({ roomCode }) => {
         const roomOld = rooms[roomCode];
         const roomDataOld = gameData[roomCode];
         roomDataOld.inMeeting = true;
@@ -232,7 +232,7 @@ io.on('connection', async (socket) => {
         });
     });
 
-    await socket.on('end-meeting', ({ roomCode }) => {
+    socket.on('end-meeting', ({ roomCode }) => {
         const roomOld = rooms[roomCode];
         const roomDataOld = gameData[roomCode];
         const playerNames = getPlayerNames(roomOld);
@@ -284,13 +284,13 @@ io.on('connection', async (socket) => {
         }, 5000);
     });
 
-    await socket.on('vote', ({ roomCode, name }) => {
+    socket.on('vote', ({ roomCode, name }) => {
         const roomOld = rooms[roomCode];
         roomOld.playerData[name].votes += 1;
         rooms[roomCode] = roomOld;
     });
 
-    await socket.on('call-emergency', ({ roomCode, name }) => {
+    socket.on('call-emergency', ({ roomCode, name }) => {
         const roomOld = rooms[roomCode];
         const roomDataOld = gameData[roomCode];
 
@@ -313,7 +313,7 @@ io.on('connection', async (socket) => {
         }, roomDataOld.emergencyDuration * 1000);
     });
 
-    await socket.on('stop-emergency-onPress', ({ roomCode }) => {
+    socket.on('stop-emergency-onPress', ({ roomCode }) => {
         const roomDataOld = gameData[roomCode];
         roomDataOld.pressingEmergency += 1;
         if (roomDataOld.pressingEmergency >= 2) {
@@ -323,36 +323,36 @@ io.on('connection', async (socket) => {
         gameData[roomCode] = roomDataOld;
     });
 
-    await socket.on('stop-emergency-onRelease', ({ roomCode }) => {
+    socket.on('stop-emergency-onRelease', ({ roomCode }) => {
         const roomDataOld = gameData[roomCode];
         roomDataOld.pressingEmergency -= 1;
         gameData[roomCode] = roomDataOld;
     });
 
     // task logic
-    await socket.on('view-scanner', ({ roomCode }, fn) => {
+    socket.on('view-scanner', ({ roomCode }, fn) => {
         const room = rooms[roomCode];
         const playerStats = getPlayerStatuses(room);
         fn({ playerStatus: playerStats });
     });
 
-    await socket.on('get-task-list', ({ roomCode, name }, fn) => {
+    socket.on('get-task-list', ({ roomCode, name }, fn) => {
         const room = rooms[roomCode];
         const taskList = getPlayerTasks(room, name);
         fn(taskList);
     });
 
-    await socket.on('start-task', ({ roomCode, name, taskID }) => {
+    socket.on('start-task', ({ roomCode, name, taskID }) => {
         const room = rooms[roomCode];
         rooms[roomCode] = playerEnterTask(room, name, taskID);
     });
 
-    await socket.on('exit-task', ({ roomCode, name }) => {
+    socket.on('exit-task', ({ roomCode, name }) => {
         const room = rooms[roomCode];
         rooms[roomCode] = playerExitTask(room, name);
     });
 
-    await socket.on('finish-task', ({ roomCode, name, taskID }) => {
+    socket.on('finish-task', ({ roomCode, name, taskID }) => {
         const roomOld = rooms[roomCode];
         const roomDataOld = gameData[roomCode];
         const { room, roomData } = playerFinishTask(
@@ -373,25 +373,25 @@ io.on('connection', async (socket) => {
     });
 
     // util
-    await socket.on('reset-all-rooms', () => {
+    socket.on('reset-all-rooms', () => {
         rooms = {};
         gameData = {};
         io.sockets.emit('reset-all-rooms');
         logInfo(`Reset All Rooms: ${rooms}`);
     });
 
-    await socket.on('reset-room', ({ roomCode }) => {
+    socket.on('reset-room', ({ roomCode }) => {
         delete gameData[roomCode];
         delete rooms[roomCode];
         io.to(roomCode).emit('reset-room');
         logInfo(`Reset Room: ${roomCode}`);
     });
 
-    await socket.on('fetch-admin-data', () => {
+    socket.on('fetch-admin-data', () => {
         socket.emit('admin-data', { rooms: rooms, gameData: gameData });
     });
 
-    await socket.on('join-room-sound', ({ roomCode }) => {
+    socket.on('join-room-sound', ({ roomCode }) => {
         socket.join(`${roomCode}Sound`);
     });
 });

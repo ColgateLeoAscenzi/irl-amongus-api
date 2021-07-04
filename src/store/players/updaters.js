@@ -67,10 +67,12 @@ const playerFinishTask = (room, roomData, name, taskID) => {
     room.playerData[name].currentTask = '-1';
 
     const task = room.playerData[name].taskList[taskID];
-    task.completed = true;
-    room.playerData[name].taskList[taskID] = task;
+    if(!(task.completed)){
+        task.completed = true;
+        room.playerData[name].taskList[taskID] = task;
 
-    roomData.tasksComplete += 1;
+        roomData.tasksComplete += 1;
+    }
 
     return { room: room, roomData: roomData };
 };
